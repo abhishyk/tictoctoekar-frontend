@@ -1340,7 +1340,6 @@
   // Owned here (not by rps.js/game2048.js individually) because both games
   // share the same #miniResultOverlay markup — wiring its buttons once, in a
   // file that's always loaded, avoids any game double-binding them.
-  let miniResultOnClose = null;
   let miniResultOnReplay = null;
   let miniReplayTimer = null;
 
@@ -1350,13 +1349,6 @@
       miniReplayTimer = null;
     }
   }
-
-  el('miniResultCloseBtn').addEventListener('click', () => {
-    el('miniResultOverlay').hidden = true;
-    const cb = miniResultOnClose;
-    miniResultOnClose = null;
-    if (cb) cb();
-  });
 
   // Replay has a hard 5-second window (see showMiniResult below) — after it
   // disables itself, only Home works. Used by Rock Paper Scissors (both solo
@@ -1415,20 +1407,19 @@
     closeMiniResult() {
       clearMiniReplayTimer();
       miniResultOnReplay = null;
-      miniResultOnClose = null;
       el('miniResultOverlay').hidden = true;
     },
-    // Full-screen win/lose celebration shared by every mini game.
-    // { win, emoji, title, sub, coinText, coinPositive, onClose, onReplay, replaySeconds, autoReplayOnTimeout }
-    // Pass `onClose` for the plain single "Continue" button (used by 2048).
-    // Pass `onReplay` instead for the Replay(Ns)+Home two-button flow (used
-    // by Rock Paper Scissors, solo AND PvP alike). `autoReplayOnTimeout: true`
-    // (solo vs Bot only) means: if the countdown runs out with no tap, just
-    // fire the replay callback anyway instead of disabling it — there's no
-    // opponent to leave hanging, so there's no reason to force Home. PvP
-    // leaves this false (default): once time's up, only Home works, since
-    // auto-continuing without the other real player's consent would be odd.
-    showMiniResult({ win, emoji, title, sub, coinText, coinPositive, onClose, onReplay, replaySeconds = 5, autoReplayOnTimeout = false }) {
+    // Full-screen win/lose celebration shared by every mini game. There is
+    // no plain "Continue" button anymore — Home is always available, and
+    // Replay shows up too whenever a game passes `onReplay`.
+    // { win, emoji, title, sub, coinText, coinPositive, onReplay, replaySeconds, autoReplayOnTimeout }
+    // `autoReplayOnTimeout: true` (solo vs Bot only) means: if the 5s
+    // countdown runs out with no tap, just fire the replay callback anyway
+    // instead of disabling it — there's no opponent to leave hanging, so
+    // there's no reason to force Home. PvP leaves this false (default):
+    // once time's up, only Home works, since auto-continuing without the
+    // other real player's consent would be odd.
+    showMiniResult({ win, emoji, title, sub, coinText, coinPositive, onReplay, replaySeconds = 5, autoReplayOnTimeout = false }) {
       el('miniResultEmoji').textContent = emoji;
       el('miniResultTitle').textContent = title;
       el('miniResultSub').textContent = sub || '';
@@ -1451,16 +1442,13 @@
       }
 
       clearMiniReplayTimer();
-      const closeBtn = el('miniResultCloseBtn');
       const replayBtn = el('miniResultReplayBtn');
       const homeBtn = el('miniResultHomeBtn');
+      homeBtn.hidden = false;
 
       if (onReplay) {
-        closeBtn.hidden = true;
         replayBtn.hidden = false;
-        homeBtn.hidden = false;
         replayBtn.disabled = false;
-        miniResultOnClose = null;
         miniResultOnReplay = onReplay;
 
         let secs = replaySeconds;
@@ -1484,11 +1472,8 @@
           }
         }, 1000);
       } else {
-        closeBtn.hidden = false;
         replayBtn.hidden = true;
-        homeBtn.hidden = true;
         miniResultOnReplay = null;
-        miniResultOnClose = onClose || null;
       }
 
       el('miniResultOverlay').hidden = false;
