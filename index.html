@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<title>Tic Tac Toe</title>
+<meta name="color-scheme" content="dark" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="style.css" />
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body oncontextmenu="return false;">
+
+<div id="app">
+
+  <!-- Top bar: coin balance, visible on every screen except the game board -->
+  <header class="topbar" id="topbar">
+    <button class="icon-btn" id="backBtn" aria-label="Back" hidden>‹</button>
+    <div class="brand"><span class="brand-mark">✕⭘</span> Tic&nbsp;Tac&nbsp;Toe</div>
+    <div class="coin-pill" id="coinPill">
+      <span class="coin-icon">💰</span>
+      <span id="coinAmount">--</span>
+    </div>
+  </header>
+
+  <!-- Shown only during a PvP match when a few poll requests in a row fail
+       due to a slow/dropped connection — reassures the player their move
+       isn't lost, it's just waiting on the network. -->
+  <div class="conn-banner" id="connBanner" hidden>📶 Weak connection — reconnecting…</div>
+
+  <main id="screens">
+
+    <!-- HOME -->
+    <section class="screen" id="screen-home" data-screen="home">
+      <div class="home-hero">
+        <div class="hero-board" aria-hidden="true">
+          <span>X</span><span>O</span><span>X</span>
+          <span>O</span><span>X</span><span>O</span>
+          <span>X</span><span>O</span><span>X</span>
+        </div>
+        <p class="home-tagline">Challenge friends, climb the leaderboard.</p>
+      </div>
+      <div class="menu-list">
+        <button class="menu-btn primary" data-action="find-player">
+          <span class="menu-icon">🔍</span>
+          <span>Find Player</span>
+        </button>
+        <button class="menu-btn" data-action="play-friend">
+          <span class="menu-icon">🤝</span>
+          <span>Invite Friend</span>
+        </button>
+        <button class="menu-btn" data-action="play-computer">
+          <span class="menu-icon">🤖</span>
+          <span>Beat the Bot, Earn Coins</span>
+        </button>
+        <button class="menu-btn" data-action="wallet">
+          <span class="menu-icon">👛</span>
+          <span>Wallet</span>
+        </button>
+        <button class="menu-btn" data-action="leaderboard">
+          <span class="menu-icon">🏆</span>
+          <span>Leaderboard</span>
+        </button>
+        <button class="menu-btn" data-action="spin-wheel">
+          <span class="menu-icon">🎡</span>
+          <span>Spin & Win Reward</span>
+        </button>
+        <button class="menu-btn" data-action="guide">
+          <span class="menu-icon">ℹ️</span>
+          <span>Help & Features</span>
+        </button>
+        <button class="menu-btn" data-action="more-games">
+          <span class="menu-icon">🎲</span>
+          <span>More Games</span>
+        </button>
+      </div>
+      <p class="home-footer">Tic Tac Toe · powered by tuk-tuk entertainment</p>
+    </section>
+
+    <!-- FIND PLAYER -->
+    <section class="screen" id="screen-find" data-screen="find">
+      <h2 class="screen-title">Find Player</h2>
+      <div class="search-row">
+        <input id="playerSearchInput" type="text" placeholder="Search by username" autocomplete="off" />
+        <button class="icon-btn" id="playerSearchBtn" aria-label="Search">🔍</button>
+      </div>
+      <button class="menu-btn primary" id="autoMatchBtn">
+        <span class="menu-icon">⚡</span>
+        <span>Auto Match — Play Anyone</span>
+      </button>
+      <div class="or-divider"><span>or search by username</span></div>
+      <div id="playerResults" class="player-list"></div>
+      <p id="findEmptyState" class="empty-state">Search for a Telegram username to challenge.</p>
+    </section>
+
+    <!-- PLAY WITH FRIEND (share invite) -->
+    <section class="screen" id="screen-friend" data-screen="friend">
+      <h2 class="screen-title">Invite Friend</h2>
+      <p class="hint-text">Share this game with a friend, or challenge someone from Find Player.</p>
+      <button class="menu-btn primary" id="shareInviteBtn">
+        <span class="menu-icon">📤</span>
+        <span>Share Invite Link</span>
+      </button>
+    </section>
+
+    <!-- WALLET -->
+    <section class="screen" id="screen-wallet" data-screen="wallet">
+      <h2 class="screen-title">Wallet</h2>
+      <div class="wallet-grid">
+        <div class="wallet-card">
+          <div class="wallet-icon">💰</div>
+          <div class="wallet-value" id="walletCoins">--</div>
+          <div class="wallet-label">Coins</div>
+        </div>
+        <div class="wallet-card">
+          <div class="wallet-icon">🎮</div>
+          <div class="wallet-value" id="walletMatches">--</div>
+          <div class="wallet-label">Total Matches</div>
+        </div>
+        <div class="wallet-card">
+          <div class="wallet-icon">🏆</div>
+          <div class="wallet-value" id="walletWins">--</div>
+          <div class="wallet-label">Wins</div>
+        </div>
+        <div class="wallet-card">
+          <div class="wallet-icon">❌</div>
+          <div class="wallet-value" id="walletLosses">--</div>
+          <div class="wallet-label">Losses</div>
+        </div>
+      </div>
+      <button class="menu-btn primary buy-coins-btn" id="buyCoinsBtn">
+        <span class="menu-icon">⭐</span>
+        <span>Buy Coins</span>
+      </button>
+    </section>
+
+    <!-- BUY COINS (Telegram Stars) -->
+    <section class="screen" id="screen-shop" data-screen="shop">
+      <h2 class="screen-title">⭐ Buy Coins</h2>
+      <p class="hint-text">Pay with Telegram Stars — coins are added to your wallet instantly.</p>
+      <div id="shopPackages" class="shop-list"></div>
+    </section>
+
+    <!-- LEADERBOARD -->
+    <section class="screen" id="screen-leaderboard" data-screen="leaderboard">
+      <h2 class="screen-title">🏆 Leaderboard</h2>
+      <div id="leaderboardList" class="leaderboard-list"></div>
+    </section>
+
+    <!-- SPIN WHEEL (unlocks at 1,00,000 coins) -->
+    <section class="screen" id="screen-spin" data-screen="spin">
+      <h2 class="screen-title">🎡 Spin & Win Reward</h2>
+      <div class="wheel-wrap">
+        <div class="wheel-pointer">▼</div>
+        <div class="wheel" id="spinWheel"></div>
+        <div class="wheel-hub"></div>
+      </div>
+      <p class="spin-status" id="spinStatus">Loading…</p>
+      <button class="menu-btn primary" id="spinBtn" disabled>Spin</button>
+    </section>
+
+    <!-- HOW IT WORKS (app guide / FAQ) -->
+    <section class="screen" id="screen-guide" data-screen="guide">
+      <h2 class="screen-title">ℹ️ Help & Features</h2>
+      <div class="guide-list">
+        <details class="guide-item" open>
+          <summary>🤝 Invite Friend / Find Player</summary>
+          <p>Search a player's username, or share your invite link so a friend can join directly. Both players stake <b>10 coins</b> to start — the winner gets their own 10 back (no extra gain), the loser's 10 coins are forfeited. A genuine draw refunds both players, nobody loses anything.</p>
+        </details>
+        <details class="guide-item">
+          <summary>⚡ Auto Match</summary>
+          <p>Same 10-coin stake and rules as Invite Friend — instantly pairs you with whoever else is looking for a match right now, no searching needed.</p>
+        </details>
+        <details class="guide-item">
+          <summary>🤖 Beat the Bot, Earn Coins</summary>
+          <p>Free practice against the AI — no entry fee, no risk. Win and you earn <b>+3 coins</b> (up to 300 coins/day). A draw or a loss costs nothing. <b>Bot games never count towards your Wins or the Leaderboard</b> — they're for earning coins only, not for climbing the rankings.</p>
+        </details>
+        <details class="guide-item">
+          <summary>💰 Wallet &amp; running out of coins</summary>
+          <p>Your balance, match history and wins live in Wallet. If you drop to 0 coins you can't join a paid match (Invite Friend / Auto Match need 10) — but <b>Beat the Bot, Earn Coins is always free</b> and can top you back up, or buy coins instantly with Telegram Stars from Wallet → Buy Coins.</p>
+        </details>
+        <details class="guide-item">
+          <summary>🎡 Spin & Win Reward</summary>
+          <p>Unlocks once your wallet hits <b>1,00,000 coins</b>. Each spin costs a flat <b>99,000 coins</b> (so at exactly 1,00,000 you're left with 1,000 after spinning). Prizes: 3 Months Telegram Premium, 15/25/50/100 Telegram Stars, an Admin Choice surprise, or Better Luck Next Time. Real prizes (not coins) aren't auto-delivered — you'll get a message here once the team credits it.</p>
+        </details>
+        <details class="guide-item">
+          <summary>🏆 Leaderboard</summary>
+          <p>Ranked purely by PvP wins (Invite Friend / Auto Match). Bot-mode games are excluded on purpose, so the leaderboard always reflects real matches against real players.</p>
+        </details>
+      </div>
+    </section>
+
+    <!-- MORE GAMES (built entirely into this app — no external sites, no
+         browser hand-off. Each game's own JS file is lazy-loaded only when
+         opened, see app.js openMiniGame, so it never affects home-screen
+         load time.) -->
+    <section class="screen" id="screen-moregames" data-screen="moregames">
+      <h2 class="screen-title">🎲 More Games</h2>
+      <p class="hint-text">Extra games, built right into the app.</p>
+      <div class="menu-list">
+        <button class="menu-btn" data-action="open-rps">
+          <span class="menu-icon">✊</span>
+          <span>Rock Paper Scissors</span>
+        </button>
+        <button class="menu-btn" data-action="open-2048">
+          <span class="menu-icon">🔢</span>
+          <span>2048</span>
+        </button>
+      </div>
+
+      <div class="mini-game-earnings">
+        <div class="mini-game-earnings-title">🪙 Coin Earnings</div>
+        <div class="mini-game-earnings-row">
+          <span>✊ Rock Paper Scissors</span>
+          <span class="mini-game-earnings-amt">+1 coin / win</span>
+        </div>
+        <div class="mini-game-earnings-row">
+          <span>🔢 2048</span>
+          <span class="mini-game-earnings-amt">+3 coins / win</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ROCK PAPER SCISSORS (vs Computer) — bot on top, you at the bottom,
+         like facing off across a table. See rps.js for the full round flow
+         (countdown → simultaneous reveal → win/lose celebration). -->
+    <section class="screen" id="screen-rps" data-screen="rps">
+      <h2 class="screen-title">✊ Rock Paper Scissors</h2>
+      <p class="hint-text">Beat the bot — win +1 coin per round.</p>
+
+      <div class="rps-table">
+        <div class="rps-player">
+          <div class="rps-emoji" id="rpsBotEmoji">✊</div>
+          <div class="rps-label" id="rpsBotLabel">Bot</div>
+        </div>
+        <div class="rps-mid">
+          <div class="rps-vs">VS</div>
+          <p class="mini-game-status" id="rpsResult">Tap Start Round</p>
+        </div>
+        <div class="rps-player">
+          <div class="rps-emoji" id="rpsPlayerEmoji">✊</div>
+          <div class="rps-label">You</div>
+        </div>
+      </div>
+
+      <div class="rps-bottom-group">
+        <div class="rps-choices" id="rpsChoices" hidden>
+          <button class="rps-choice-btn" data-choice="rock" disabled>✊</button>
+          <button class="rps-choice-btn" data-choice="paper" disabled>✋</button>
+          <button class="rps-choice-btn" data-choice="scissors" disabled>✌️</button>
+        </div>
+
+        <div class="rps-start-row">
+          <button class="rps-start-btn" id="rpsStartBtn">Start<br />Round</button>
+        </div>
+        <p class="cap-note" id="rpsCapNote"></p>
+      </div>
+    </section>
+
+    <!-- 2048 -->
+    <section class="screen" id="screen-2048" data-screen="2048">
+      <div class="mini-game-header">
+        <h2 class="screen-title">🔢 2048</h2>
+        <div class="g2048-score">Score: <span id="g2048Score">0</span></div>
+      </div>
+      <div class="g2048-board-wrap">
+        <div class="g2048-board" id="g2048Board"></div>
+      </div>
+      <div class="mini-game-controls">
+        <button class="menu-btn" id="g2048RestartBtn">Restart</button>
+      </div>
+      <p class="hint-text">Swipe or use arrow keys — merge tiles to reach 2048 and win +3 coins.</p>
+      <p class="cap-note" id="g2048CapNote"></p>
+    </section>
+
+    <!-- WAITING FOR OPPONENT (challenge sent / accepted) -->
+    <section class="screen" id="screen-waiting" data-screen="waiting">
+      <div class="waiting-box">
+        <div class="spinner" id="waitingSpinner"></div>
+        <!-- Shown instead of the plain spinner specifically for Auto Match
+             ("Searching for an opponent…") — reads as actively scanning for
+             a match rather than a static loading icon. Waiting for a named
+             friend to accept still uses the plain spinner above. -->
+        <div class="radar-wrap" id="waitingRadar" hidden>
+          <div class="radar">
+            <div class="radar-ring"></div>
+            <div class="radar-ring delay1"></div>
+            <div class="radar-ring delay2"></div>
+            <div class="radar-sweep"></div>
+          </div>
+        </div>
+        <p id="waitingText">Waiting for opponent…</p>
+        <button class="menu-btn" id="waitingCancelBtn" hidden>Cancel</button>
+      </div>
+    </section>
+
+    <!-- GAME BOARD (computer + pvp share this) -->
+    <section class="screen" id="screen-game" data-screen="game">
+      <div class="game-header">
+        <div class="player-chip me">
+          <div class="avatar" id="meAvatar">X</div>
+          <div class="player-name" id="meName">You</div>
+        </div>
+        <div class="vs-col">
+          <div class="vs">VS</div>
+          <button class="icon-btn quit-btn" id="quitBtn" aria-label="Quit">🚩</button>
+        </div>
+        <div class="player-chip opp">
+          <div class="avatar" id="oppAvatar">O</div>
+          <div class="player-name" id="oppName">Opponent</div>
+        </div>
+      </div>
+
+      <div class="turn-indicator" id="turnIndicator">Your turn</div>
+      <div class="timeout-row" id="timeoutRow" hidden>
+        <span class="timeout-text" id="timeoutText"></span>
+        <button class="timeout-btn" id="timeoutBtn" hidden>Leave</button>
+      </div>
+
+      <div class="board-wrap" id="boardWrap">
+        <div class="board" id="board">
+          <button class="cell" data-index="0"></button>
+          <button class="cell" data-index="1"></button>
+          <button class="cell" data-index="2"></button>
+          <button class="cell" data-index="3"></button>
+          <button class="cell" data-index="4"></button>
+          <button class="cell" data-index="5"></button>
+          <button class="cell" data-index="6"></button>
+          <button class="cell" data-index="7"></button>
+          <button class="cell" data-index="8"></button>
+          <div class="win-line" id="winLine" hidden></div>
+        </div>
+      </div>
+
+      <div class="reaction-bar" id="reactionBar">
+        <button class="reaction-btn" data-emoji="👍">👍</button>
+        <button class="reaction-btn" data-emoji="😂">😂</button>
+        <button class="reaction-btn" data-emoji="😮">😮</button>
+        <button class="reaction-btn" data-emoji="🔥">🔥</button>
+        <button class="reaction-btn" data-emoji="😢">😢</button>
+        <button class="reaction-btn" data-emoji="👏">👏</button>
+        <button class="reaction-btn" data-emoji="❤️">❤️</button>
+        <button class="reaction-btn" data-emoji="🎉">🎉</button>
+        <button class="reaction-btn" data-emoji="💯">💯</button>
+        <button class="reaction-btn" data-emoji="😱">😱</button>
+      </div>
+
+      <div class="game-footer">
+        <span class="stake-note" id="stakeNote"></span>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- COUNTDOWN OVERLAY -->
+  <div class="overlay" id="countdownOverlay" hidden>
+    <div class="countdown-number" id="countdownNumber">3</div>
+  </div>
+
+  <!-- WINNER / RESULT MODAL -->
+  <div class="overlay modal-overlay" id="resultModal" hidden>
+    <div class="modal result-modal">
+      <div class="result-emoji" id="resultEmoji">🏆</div>
+      <div class="result-title" id="resultTitle">You Win!</div>
+      <div class="result-sub" id="resultSub"></div>
+      <div class="coin-change" id="coinChange" hidden></div>
+      <div class="modal-actions">
+        <button class="menu-btn primary" id="resultPlayAgainBtn">Play Again</button>
+        <button class="menu-btn" id="resultHomeBtn">Home</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHALLENGE INCOMING MODAL (when opened via deep link to a pending challenge) -->
+  <div class="overlay modal-overlay" id="challengeModal" hidden>
+    <div class="modal">
+      <div class="result-emoji">🎮</div>
+      <div class="result-title" id="challengeTitle">You've been challenged!</div>
+      <div class="result-sub" id="challengeSub">Pick a game to accept with</div>
+      <div class="modal-actions">
+        <button class="menu-btn primary" id="challengeAcceptTttBtn">❌⭕ Tic Tac Toe</button>
+        <button class="menu-btn primary" id="challengeAcceptRpsBtn">✊ Rock Paper Scissors</button>
+        <button class="menu-btn" id="challengeDeclineBtn">Decline</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SPIN RESULT MODAL -->
+  <div class="overlay modal-overlay" id="spinResultModal" hidden>
+    <div class="modal result-modal">
+      <div class="result-emoji" id="spinResultEmoji">🎉</div>
+      <div class="result-title" id="spinResultTitle">You won!</div>
+      <div class="result-sub" id="spinResultSub"></div>
+      <div class="modal-actions">
+        <button class="menu-btn primary" id="spinResultOkBtn">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MINI-GAME RESULT OVERLAY (shared full-screen win/lose celebration for
+       Rock Paper Scissors + 2048 — see rps.js / game2048.js) -->
+  <div class="overlay modal-overlay" id="miniResultOverlay" hidden>
+    <div class="modal result-modal" id="miniResultCard">
+      <div class="result-emoji" id="miniResultEmoji">🎉</div>
+      <div class="result-title" id="miniResultTitle">You Win!</div>
+      <div class="result-sub" id="miniResultSub"></div>
+      <div class="coin-change" id="miniResultCoin" hidden></div>
+      <div class="modal-actions">
+        <button class="menu-btn primary" id="miniResultCloseBtn">Continue</button>
+        <button class="menu-btn primary" id="miniResultReplayBtn" hidden>🔁 Replay (5s)</button>
+        <button class="menu-btn" id="miniResultHomeBtn" hidden>Home</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div class="toast" id="toast" hidden></div>
+
+  <!-- LOADING OVERLAY -->
+  <div class="overlay loading-overlay" id="loadingOverlay">
+    <div class="loader-ring"></div>
+  </div>
+
+</div>
+
+<script>
+  // Used for the "Share Invite Link" button — both must be set for the
+  // shared link to open the Mini App directly (not just the bot chat),
+  // which is also what makes Telegram auto-render a rich preview card
+  // using the Mini App's own name/icon (set via BotFather → /myapps).
+  window.__BOT_USERNAME__ = 'tictactoekarbot';
+  window.__MINIAPP_NAME__ = 'tictactoekar';
+</script>
+<script src="api.js"></script>
+<script src="game.js"></script>
+<script src="animations.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
