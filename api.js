@@ -271,6 +271,15 @@ const Api = {
     });
   },
 
+  // Marks the match ended once a player leaves, so a stale "Play Game" deep
+  // link can never silently drop someone back into a match whose opponent
+  // is already gone (see app.js's startParam handling).
+  leaveRpsMatch(gameId) {
+    return this.request(`/api/game/${encodeURIComponent(gameId)}/rps-leave`, {
+      method: 'POST',
+    });
+  },
+
   createInvoice(packageId) {
     return this.request('/api/shop/invoice', {
       method: 'POST',
