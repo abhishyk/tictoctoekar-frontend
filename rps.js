@@ -131,7 +131,7 @@ window.RpsGame = (function () {
     el('rpsResult').textContent = 'Rock… Paper… Scissors…!';
     let res;
     try {
-      [res] = await Promise.all([Api.playRps(choice), sleep(650)]);
+      [res] = await Promise.all([Api.playRps(choice), sleep(850)]);
     } catch (err) {
       el('rpsResult').textContent = 'Something went wrong — try again.';
       window.MiniApp.toast(err.message || 'Network error');
@@ -154,7 +154,7 @@ window.RpsGame = (function () {
     botEl.textContent = EMOJI[oppChoice] || '❔';
     meEl.classList.add('reveal-pop');
     botEl.classList.add('reveal-pop');
-    await sleep(1100);
+    await sleep(1400);
   }
 
   // Every outcome (win/loss/draw) shows the shared Replay(5s)+Home overlay
