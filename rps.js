@@ -215,6 +215,22 @@ window.RpsGame = (function () {
     });
   }
 
+  // The Worker proxies every game-room call through a check that the match
+  // is still `status: 'started'` (see proxyToGameRoom in index.js) — once
+  // the opponent has left (see stopPvp()'s leaveRpsMatch call), that check
+  // starts failing with this exact message, which is how we tell "match
+  // ended" apart from an ordinary network blip.
+  function isMatchEndedError(err) {
+    return /not active/i.test((err && err.message) || '');
+  }
+
+  function handleOpponentLeft() {
+    stopPvpPoll();
+    pvp = null;
+    window.MiniApp.toast('Opponent left the match.');
+    window.MiniApp.goHome();
+  }
+
   async function playPvp(choice) {
     if (busy) return;
     busy = true;
@@ -225,6 +241,7 @@ window.RpsGame = (function () {
       const state = await Api.pvpRpsPick(pvp.gameId, choice);
       await handlePvpState(state);
     } catch (err) {
+      if (isMatchEndedError(err)) { handleOpponentLeft(); return; }
       window.MiniApp.toast(err.message || 'Network error');
       setChoicesEnabled(true);
       busy = false;
@@ -236,8 +253,9 @@ window.RpsGame = (function () {
     try {
       const state = await Api.getGameState(pvp.gameId);
       await handlePvpState(state);
-    } catch (_) {
-      // Transient network hiccup — next tick retries.
+    } catch (err) {
+      if (isMatchEndedError(err)) { handleOpponentLeft(); return; }
+      // Otherwise a transient network hiccup — next tick retries.
     }
   }
 
@@ -322,10 +340,16 @@ window.RpsGame = (function () {
     }
   }
 
-  // Called by app.js when the player leaves via the shared overlay's Home
-  // button, so the background "did the opponent replay?" poll (see
-  // showPvpResult) doesn't keep quietly running after we've navigated away.
+  // Called by app.js when the player leaves — the Home button, or
+  // navigating away from the RPS screen entirely mid-round. Stops the
+  // background poll AND tells the server this match is over, so a stale
+  // "▶️ PLAY GAME" deep link (from the original Telegram challenge message)
+  // can never silently drop the OTHER player back into a "PvP" match with
+  // nobody actually on the other side (see app.js's startParam handling).
   function stopPvp() {
+    if (pvp) {
+      Api.leaveRpsMatch(pvp.gameId).catch(() => {}); // best-effort — a missed call just means cron cleans it up later
+    }
     stopPvpPoll();
     pvp = null;
   }
