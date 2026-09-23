@@ -1312,6 +1312,14 @@
           } else if (game.status === 'started') {
             if (game.gameType === 'rps') enterPvpRps(startParam);
             else enterPvpGame(startParam);
+          } else if (game.gameType === 'rps') {
+            // This RPS match already ended (both players left, or it was
+            // never actually played) — the original Telegram "▶️ PLAY GAME"
+            // button is stale. There's no real opponent to join anymore, so
+            // rather than land on a blank home screen, drop straight into
+            // solo RPS vs the Bot instead.
+            await refreshMe();
+            openMiniGame('rps', 'rps.js', 'RpsGame');
           }
         } catch (_) {
           // Unknown/expired start param — ignore, just show home.
