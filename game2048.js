@@ -108,9 +108,10 @@ window.Game2048 = (function () {
         win: false,
         emoji: '😢',
         title: 'No More Moves',
-        sub: 'Board is full — tap Restart to try again.',
+        sub: 'Board is full — tap Replay to try again.',
         coinText: '',
-        onClose: start,
+        onReplay: start,
+        autoReplayOnTimeout: true, // solo game — no reason to force Home if they don't tap in time
       });
     }
   }
@@ -145,6 +146,8 @@ window.Game2048 = (function () {
         sub: 'You merged your way to victory.',
         coinText: res.awarded ? `+${res.reward} coin` : 'Daily coin limit reached',
         coinPositive: res.awarded,
+        onReplay: start,
+        autoReplayOnTimeout: true,
       });
     } catch (err) {
       window.MiniApp.toast(err.message || 'Could not claim reward — check your connection.');
